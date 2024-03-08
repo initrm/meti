@@ -11,7 +11,7 @@ jobs:
           pkg-manager: npm
       - run:
           name: Run tests
-          command: echo \"No test specified in package.json\"
+          command: node --experimental-vm-modules node_modules/jest/bin/jest.js
 workflows:
   build-and-test:
     jobs:
