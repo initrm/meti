@@ -1,12 +1,8 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
 import Routes from './routes.js';
 
-// axios configuration
-
-axios.defaults.withCredentials = true;
-
-// custom redirect handling
+// axios configuration, custom redirect handling
 axios.defaults.maxRedirects = 0;
 axios.interceptors.response.use((response) => response, (error) => { // on redirect
   if (error.response && [301, 302].includes(error.response.status)) {
@@ -49,7 +45,8 @@ class Authenticator {
    * 
    * @param {string} username - The user's username
    * @param {string} password - The user's password
-   * @throws {Error} If the login fails
+   * @throws {WrongCredentialsError} If the login fails due to invalid credentials
+   * @throws {AxiosError} If the login fails due to other reasons
    * @returns {string} The authenticated session cookies
    */
   static async login(username, password) {
@@ -67,18 +64,45 @@ class Authenticator {
       if (inputs[i].attribs.name !== undefined && inputs[i].attribs.value !== '')
         formData[inputs[i].attribs.name] = inputs[i].attribs.value;
 
-    // performs the login request
-    const authResponse = await axios.post(Routes.PostLogin, formData, {
-      headers: {
-        'Cookie': cookies,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
+    try {
+      // performs the login request
+      const authResponse = await axios.post(Routes.PostLogin, formData, {
+        headers: {
+          'Cookie': cookies,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
 
-    // returns the auth cookies
-    return authResponse.config.headers.Cookie;
+      // returns the auth cookies
+      return authResponse.config.headers.Cookie;
+    }
+    catch(error) {
+      if (error.response?.status === 401)
+        throw new WrongCredentialsError();
+      throw error;
+    }
   }
 
+}
+
+/**
+ * Custom error class for the Authenticator class
+ */
+export class AuthenticatorError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AuthenticatorError';
+  }
+}
+
+/**
+ * Custom error class for wrong credentials scenario
+ */
+export class WrongCredentialsError extends AuthenticatorError {
+  constructor() {
+    super('Wrong credentials');
+    this.code = 'WRONG_CREDENTIALS';
+  }
 }
 
 export default Authenticator;
