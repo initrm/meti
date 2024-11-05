@@ -10,7 +10,7 @@
   "author": "Andrea Tinelli",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.7",
+    "axios": "^1.7.4",
     "cheerio": "^1.0.0-rc.12",
     "validator": "^13.11.0"
   },
